@@ -1,12 +1,4 @@
 
-org $81B40A
-hook_samus_data_text:
-    ;      S      P      A      C      E      _      T      I      M      E
-    dw $202B, $200D, $200A, $200C, $200E, $200F, $202C, $2022, $2026, $200E, $FFFE
-    dw $203B, $2038, $201A, $201C, $201E, $200F, $2011, $2011, $2036, $201E, $FFFF
-
-
-
 org $90ACF6
 hook_load_beam_palette_external:
     JSR original_load_beam_palette
@@ -57,8 +49,14 @@ spacetime_routine:
     CPX #($7EC608-$7EC1C0) : BMI .loop_before_infohud
  
     ; Skip over infohud
-    TXA : CLC : ADC #($7EC6C8-$7EC608) : TAX
-    TYA : CLC : ADC #($7EC6C8-$7EC608) : TAY
+    ; Instead of load and store, load and load
+  .loop_skip_infohud
+    LDA $7EC1C0,X
+    LDA [$00],Y
+    INX : INX : INY : INY
+    CPX #($7EC6C8-$7EC1C0) : BMI .loop_skip_infohud
+
+    ; Check if we finished spacetime while skipping over infohud
     CPY #$0020 : BMI .check_sprite_object_ram
     RTS
 
@@ -82,9 +80,15 @@ spacetime_routine:
     INX : INX : INY : INY
     CPX #($7EEF78-$7EC1C0) : BMI .loop_before_sprite_object_ram
 
-    ; Skip over sprite object ram and resume normal loop
-    TXA : CLC : ADC #($7EF378-$7EEF78) : TAX
-    TYA : CLC : ADC #($7EF378-$7EEF78) : TAY
+    ; Skip over sprite object ram
+    ; Instead of load and store, load and load
+  .loop_skip_sprite_object_ram
+    LDA $7EC1C0,X
+    LDA [$00],Y
+    INX : INX : INY : INY
+    CPX #($7EF378-$7EC1C0) : BMI .loop_skip_sprite_object_ram
+
+    ; Check if we finished spacetime while skipping over sprite object ram
     CPY #$0020 : BMI .normal_load_loop
     RTS
 }

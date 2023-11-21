@@ -40,7 +40,7 @@ spacetime_routine:
     ; Check if Y will cause us to reach infohud
     TYA : CLC : ADC #($7EC608-$7EC1E2) : CMP #$0000 : BPL .normal_load_palette
 
-    ; It will, so run our own loop
+    ; We will reach infohud, so run our own loop
     INX : INX
   .loop_before_infohud
     LDA [$00],Y
@@ -74,11 +74,13 @@ endif
     CPY #$0020 : BMI .normal_load_loop
     RTS
 
+if defined("SPACETIME_PRESERVE_INFOHUD")
   .check_sprite_object_ram
     ; Check if Y will cause us to reach sprite object ram
     TYA : CLC : ADC #($7EEF78-$7EC6E8) : CMP #$0000 : BPL .normal_load_loop
+endif
 
-    ; It will, so run our own loop
+    ; We will reach sprite object ram, so run our own loop
   .loop_before_sprite_object_ram
     LDA [$00],Y
     STA $7EC1C0,X

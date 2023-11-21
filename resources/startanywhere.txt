@@ -1,0 +1,102 @@
+;================================================
+; Suitable values for startanywhere.asm
+;================================================
+
+;================================================
+; Noob Bridge
+;================================================
+!START_ROOM_ID = $9FBA
+!START_ROOM_REGION = $0001
+!START_ROOM_DOOR = $8E92
+!START_ROOM_SCREEN_X = $0400
+!START_ROOM_SCREEN_Y = $0000
+!START_ROOM_SAMUS_Y = $00A8
+!START_ROOM_SAMUS_X_OFFSET = $FFF0
+!START_ROOM_MAP_X = $00F8
+!START_ROOM_MAP_Y = $0070
+!START_ROOM_TILE_XY = $0C46
+
+;================================================
+; Three Musketeers
+;================================================
+!START_ROOM_ID = $B656
+!START_ROOM_REGION = $0002
+!START_ROOM_DOOR = $99AE
+!START_ROOM_SCREEN_X = $0100
+!START_ROOM_SCREEN_Y = $0000
+!START_ROOM_SAMUS_Y = $0088
+!START_ROOM_SAMUS_X_OFFSET = $0040
+!START_ROOM_MAP_X = $00F0
+!START_ROOM_MAP_Y = $0020
+!START_ROOM_TILE_XY = $0A1B
+
+;================================================
+; Screw Attack
+;================================================
+!START_ROOM_ID = $B6C1
+!START_ROOM_REGION = $0002
+!START_ROOM_DOOR = $988E
+!START_ROOM_SCREEN_X = $0000
+!START_ROOM_SCREEN_Y = $0200
+!START_ROOM_SAMUS_Y = $0160
+!START_ROOM_SAMUS_X_OFFSET = $0000
+!START_ROOM_MAP_X = $00A0
+!START_ROOM_MAP_Y = $0088
+!START_ROOM_TILE_XY = $2B07
+
+;================================================
+; Main Street
+;================================================
+!START_ROOM_ID = $CFC9
+!START_ROOM_REGION = $0004
+!START_ROOM_DOOR = $A3D8
+!START_ROOM_SCREEN_X = $0100
+!START_ROOM_SCREEN_Y = $0500
+!START_ROOM_SAMUS_Y = $0078
+!START_ROOM_SAMUS_X_OFFSET = $0010
+!START_ROOM_MAP_X = $0058
+!START_ROOM_MAP_Y = $0078
+!START_ROOM_TILE_XY = $5918
+
+;================================================
+; Crab Shaft
+;================================================
+!START_ROOM_ID = $D1A3
+!START_ROOM_REGION = $0004
+!START_ROOM_DOOR = $A468
+!START_ROOM_SCREEN_X = $0000
+!START_ROOM_SCREEN_Y = $0200
+!START_ROOM_SAMUS_Y = $0078
+!START_ROOM_SAMUS_X_OFFSET = $0060
+!START_ROOM_MAP_X = $0090
+!START_ROOM_MAP_Y = $0050
+!START_ROOM_TILE_XY = $290D
+
+;================================================
+; Dead Scientists
+;================================================
+!START_ROOM_ID = $E021
+!START_ROOM_REGION = $0006
+!START_ROOM_DOOR = $AB7C
+!START_ROOM_SCREEN_X = $0100
+!START_ROOM_SCREEN_Y = $0000
+!START_ROOM_SAMUS_Y = $0048
+!START_ROOM_SAMUS_X_OFFSET = $FFE0
+!START_ROOM_MAP_X = $0088
+!START_ROOM_MAP_Y = $0088
+!START_ROOM_TILE_XY = $0615
+
+;================================================
+; Debug
+;================================================
+!START_ROOM_ID = $E82C
+!START_ROOM_REGION = $0007
+!START_ROOM_DOOR = $ABC4
+!START_ROOM_SCREEN_X = $0000
+!START_ROOM_SCREEN_Y = $0000
+!START_ROOM_SAMUS_Y = $0098
+!START_ROOM_SAMUS_X_OFFSET = $FFB0
+!START_ROOM_MAP_X = $0000
+!START_ROOM_MAP_Y = $0000
+!START_ROOM_TILE_XY = $0B02
+

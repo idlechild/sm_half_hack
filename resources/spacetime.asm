@@ -38,7 +38,7 @@ spacetime_routine:
     CPX #$0000 : BNE .normal_load_palette
 
     ; Check if Y will cause us to reach infohud
-    TYA : CLC : ADC #($7EC608-$7EC1DE) : CMP #$0000 : BPL .normal_load_palette
+    TYA : CLC : ADC #($7EC608-$7EC1E2) : CMP #$0000 : BPL .normal_load_palette
 
     ; It will, so run our own loop
     INX : INX
@@ -47,7 +47,8 @@ spacetime_routine:
     STA $7EC1C0,X
     INX : INX : INY : INY
     CPX #($7EC608-$7EC1C0) : BMI .loop_before_infohud
- 
+
+if defined("SPACETIME_PRESERVE_INFOHUD")
     ; Skip over infohud
     ; Instead of load and store, load and load
   .loop_skip_infohud
@@ -59,6 +60,10 @@ spacetime_routine:
     ; Check if we finished spacetime while skipping over infohud
     CPY #$0020 : BMI .check_sprite_object_ram
     RTS
+else
+    ; Check if Y will cause us to reach sprite object ram
+    TYA : CLC : ADC #($7EEF78-$7EC628) : CMP #$0000 : BMI .loop_before_sprite_object_ram
+endif
 
   .normal_load_loop
     LDA [$00],Y
@@ -71,7 +76,7 @@ spacetime_routine:
 
   .check_sprite_object_ram
     ; Check if Y will cause us to reach sprite object ram
-    TYA : CLC : ADC #($7EEF78-$7EC6EA) : CMP #$0000 : BPL .normal_load_palette
+    TYA : CLC : ADC #($7EEF78-$7EC6E8) : CMP #$0000 : BPL .normal_load_loop
 
     ; It will, so run our own loop
   .loop_before_sprite_object_ram
@@ -80,6 +85,7 @@ spacetime_routine:
     INX : INX : INY : INY
     CPX #($7EEF78-$7EC1C0) : BMI .loop_before_sprite_object_ram
 
+if defined("SPACETIME_PRESERVE_SPRITE_OBJECT_RAM")
     ; Skip over sprite object ram
     ; Instead of load and store, load and load
   .loop_skip_sprite_object_ram
@@ -87,6 +93,7 @@ spacetime_routine:
     LDA [$00],Y
     INX : INX : INY : INY
     CPX #($7EF378-$7EC1C0) : BMI .loop_skip_sprite_object_ram
+endif
 
     ; Check if we finished spacetime while skipping over sprite object ram
     CPY #$0020 : BMI .normal_load_loop

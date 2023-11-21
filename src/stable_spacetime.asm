@@ -1,5 +1,6 @@
 lorom
 
+!SPACETIME_PRESERVE_SPRITE_OBJECT_RAM = 1
 incsrc ../resources/spacetime.asm
 
 org $81B40A

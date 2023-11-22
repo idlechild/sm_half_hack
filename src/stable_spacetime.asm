@@ -1,5 +1,6 @@
 lorom
 
+!SPACETIME_PRESERVE_INFOHUD = 0
 !SPACETIME_PRESERVE_SPRITE_OBJECT_RAM = 1
 incsrc ../resources/spacetime.asm
 

@@ -60,9 +60,12 @@ VerifyTrueCompletion:
     ; check if we have passed anything else
     JSR VerifyEvents : BCS .draw
     JSR VerifyMapStations : BCS .draw
+if defined("SKIP_DOOR_VERIFICATION")
+else
     JSR VerifyDoors : BCS .draw
+endif
     JSR VerifyItems : BCS .draw
-    ; if we haven't, then we have a succesful map only run
+    ; if we haven't, then we have a successful map only run
     LDY #$000E
     BRA .draw
 
@@ -85,10 +88,16 @@ VerifyTrueCompletion:
     LDY #$0008 : BRA .draw
 
   .verify_items
+    JSR VerifySuitless
+    BCS .suitless
     JSR VerifyItems
     BCS .checks_passed
     ; failed item collection check
     LDY #$000A : BRA .draw
+
+  .suitless
+    LDY #$0010
+    BRA .draw
 
   .checks_passed
     LDY #$000C
@@ -241,6 +250,24 @@ VerifyItems:
     CLC : RTS
 }
 
+VerifySuitless:
+{
+    LDX #$D870 : LDY #$0000
+
+  .loop
+    LDA $7E0000,X : CMP.w Verified_Suitless,Y : BNE .failed
+    INY #2
+    INX #2 : CPX #$D884 : BMI .loop
+
+    ; Verified
+    SEC : RTS
+
+  .failed
+    STA !ram_FailValue
+    TXA : STA !ram_FailAddress
+    CLC : RTS
+}
+
 VerifyCeresRidleyMap:
 {
     ; check if Ridley's map tile was explored
@@ -311,6 +338,7 @@ HUDTextLookupTable:
     dw #Fail_ItemCollection
     dw #Success
     dw #SuccessMapOnly
+    dw #SuccessSuitless
 
 Fail_MapTiles:
     db "MAP", $FF
@@ -336,6 +364,9 @@ Success:
 SuccessMapOnly:
     db " 1244", $FF
 
+SuccessSuitless:
+    db "SUITE", $FF
+
 Verified_Events:
     db $E5, $FF, $2F, $00 ; dummy byte for word access
 
@@ -345,6 +376,10 @@ Verified_Bosses:
 Verified_Items:
     db $FF, $FF, $EF, $FF, $FE, $1F, $FF, $FF, $DF, $FE, $01, $00, $00, $00, $00, $00
     db $FF, $FF, $FF, $05
+
+Verified_Suitless:
+    db $FF, $FF, $EF, $FF, $FE, $1F, $FE, $FF, $DF, $FE, $01, $00, $00, $00, $00, $00
+    db $7F, $FF, $FF, $05
 
 Verified_Doors:
     db $23, $F0, $09, $FE, $6F, $FF, $FF, $FF, $FF, $FE, $FF, $FF, $01, $00, $00, $00

@@ -1,7 +1,7 @@
 lorom
 
 !VERSION_MAJOR = 1
-!VERSION_MINOR = 1
+!VERSION_MINOR = 2
 
 !WRAM_ROOM_ID = $079B
 !WRAM_ROOM_WIDTH_BLOCKS = $07A5
@@ -273,10 +273,17 @@ open_all_doors:
     BRA .plmSearchResume
 
   .phantoon
-    LDA #$2482 : STA $00C4
-    LDA #$24A2 : STA $00E4
-    LDA #$2CA2 : STA $0104
-    LDA #$2C82 : STA $0124
+    LDA #$0482 : STA $00C4
+    LDA #$04A2 : STA $00E4
+    LDA #$0CA2 : STA $0104
+    LDA #$0C82 : STA $0124
+    BRA .done
+
+  .tourianEyeDoor
+    LDA #$0082 : STA $037E
+    LDA #$00A2 : STA $03FE
+    LDA #$08A2 : STA $047E
+    LDA #$0882 : STA $04FE
     BRA .done
 
   .plmSearchDone
@@ -294,7 +301,9 @@ open_all_doors:
     DEY : BNE .btsSearchLoop
 
     ; All doors opened except Phantoon door
-    %a16() : LDA !WRAM_ROOM_ID_LONG : CMP #$CD13 : BEQ .phantoon
+    %a16() : LDA !WRAM_ROOM_ID_LONG
+    CMP #$CD13 : BEQ .phantoon
+    CMP #$DDC4 : BEQ .tourianEyeDoor
   .done
     PLY : PLX : PLB : PLP : RTS
 
@@ -380,16 +389,84 @@ org $83AA96
 hook_mb_to_tourian_escape_1_door_asm:
     dw $C91F
 
+org $83ABB6
+hook_enter_ceres_ridley_door_asm:
+    dw #enter_ceres_ridley_door_asm
+
+org $83ABC2
+hook_exit_ceres_ridley_door_asm:
+    dw #exit_ceres_ridley_door_asm
 
 
-;org $84CE9B
-;plm_setup_bomb_block:
-;    LDA !WRAM_DOORS_ONLY : BEQ $21
-;    CMP #$00C9 : BCC $05
-;    CMP #$00CF : BCC $17
-;    TDC : STA $1C37,Y
-;    SEC : RTS
-;warnpc $84CEC1
+
+org $84C826
+hook_plm_gate_entries:
+    dw #plm_setup_downwards_open_gate, $BC13
+    dw #plm_setup_downwards_closed_gate, $BC3A
+    dw #plm_setup_upwards_open_gate, $BC61
+    dw #plm_setup_upwards_closed_gate, $BC88
+    dw #plm_setup_downwards_gate_shotblock, $BCAF
+    dw #plm_setup_upwards_gate_shotblock, $BCDF
+
+org $84C8CA
+hook_plm_escape_closing_gate_entry:
+    dw #plm_setup_escape_closing_gate, $BB34, $BB44
+    dw #plm_setup_escape_closing_gate, $BB44
+
+
+
+org $84F000
+print pc, " opendoors bank84 start"
+
+plm_setup_downwards_open_gate:
+{
+    LDA !WRAM_DOORS_ONLY : BEQ plm_setup_delete
+    JMP $C6D8
+}
+
+plm_setup_downwards_closed_gate:
+{
+    LDA !WRAM_DOORS_ONLY : BEQ plm_setup_delete
+    JMP $C6BE
+}
+
+plm_setup_upwards_open_gate:
+{
+    LDA !WRAM_DOORS_ONLY : BEQ plm_setup_delete
+    JMP $C6DC
+}
+
+plm_setup_upwards_closed_gate:
+{
+    LDA !WRAM_DOORS_ONLY : BEQ plm_setup_delete
+    JMP $C6CB
+}
+
+plm_setup_delete:
+{
+    LDA #$AAE3 : STA $1D27,Y
+    RTS
+}
+
+plm_setup_downwards_gate_shotblock:
+{
+    LDA !WRAM_DOORS_ONLY : BEQ plm_setup_delete
+    JMP $C6E0
+}
+
+plm_setup_upwards_gate_shotblock:
+{
+    LDA !WRAM_DOORS_ONLY : BEQ plm_setup_delete
+    JMP $C73A
+}
+
+plm_setup_escape_closing_gate:
+{
+    LDA !WRAM_DOORS_ONLY : BEQ plm_setup_delete
+    JMP $B3C1
+}
+
+print pc, " opendoors bank84 end"
 
 
 
@@ -433,22 +510,6 @@ org $8FDE72
 hook_tourian_escape_1_room_asm:
     dw $C91E
 
-org $8FDFA7
-hook_falling_tile_intro_enemy_pointer:
-    dw $E8CD
-
-org $8FDFF1
-hook_magnet_stairs_intro_enemy_pointer:
-    dw $E8F0
-
-org $8FE03B
-hook_dead_scientists_intro_enemy_pointer:
-    dw $E913
-
-org $8FE085
-hook_58_escape_intro_enemy_pointer:
-    dw $E936
-
 org $8FE652
 hook_room_state_check_morph_and_missiles:
     LDA $0000,X
@@ -466,6 +527,35 @@ morphball_room_asm:
     PHX : PHP : %ai16()
     LDX #$86DE : JSL $84846A
     PLP : PLX : RTS
+}
+
+enter_ceres_ridley_door_asm:
+{
+    ; Set Layer 1 offsets
+    PHP : %a16()
+    LDA #$0800 : STA $091D
+    LDA #$0300 : STA $091F
+    STZ $B1 : STZ $B3
+    BRA ceres_ridley_door_asm
+}
+
+exit_ceres_ridley_door_asm:
+{
+    ; Clear Ceres escape cutscene flag
+    PHP : %a16()
+    LDA $093F : AND #$FFFE : STA $093F
+}
+
+ceres_ridley_door_asm:
+{
+    ; Initialize mode 7
+    LDA #$0009 : STA $07EB
+    STZ $78 : STZ $7A
+    STZ $7C : STZ $7E
+    STZ $80 : STZ $82
+    %a8() : STZ $5F
+    LDA #$09 : STA $56
+    PLP : RTS
 }
 
 print pc, " opendoors bank $8F end"
@@ -564,9 +654,25 @@ warnpc $94C800
 
 
 
-org $A1E89A
+org $A1E89E
 hook_ceres_elevator_intro_enemies:
-    db #$FF, #$FF, #$00
+    dw #$037F
+
+org $A1E8B1
+hook_falling_tile_intro_enemies:
+    dw #$017F, #$0000, #$A800, #$0000, #$0000, #$0000, #$E23F, #$01E0, #$017F
+
+org $A1E8D4
+hook_magnet_stairs_intro_enemies:
+    dw #$027F, #$0000, #$A800, #$0000, #$0000, #$0000, #$E23F, #$00E0, #$027F
+
+org $A1E8F7
+hook_dead_scientists_intro_enemies:
+    dw #$017F, #$0000, #$A800, #$0000, #$0000, #$0000, #$E23F, #$01E0, #$017F
+
+org $A1E91A
+hook_58_escape_intro_enemies:
+    dw #$017F, #$0000, #$A800, #$0000, #$0000, #$0000, #$E23F, #$01E0, #$017F
 
 org $A1E94D
 hook_ceres_ridley_intro_enemies:
@@ -594,9 +700,9 @@ hook_ceres_ridley_escape_enemies:
 
 
 
-org $A6F542
+org $A6F53C
 ceres_ridley_intro_door_instructions:
-    dw $F6B3, $80ED, $F55E
+    dw $0001, $F921, $0001, $FAA7, $80ED, $F55E
 
 
 

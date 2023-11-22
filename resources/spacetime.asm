@@ -48,7 +48,7 @@ spacetime_routine:
     INX : INX : INY : INY
     CPX #($7EC608-$7EC1C0) : BMI .loop_before_infohud
 
-if defined("SPACETIME_PRESERVE_INFOHUD")
+if !SPACETIME_PRESERVE_INFOHUD
     ; Skip over infohud
     ; Instead of load and store, load and load
   .loop_skip_infohud
@@ -74,7 +74,7 @@ endif
     CPY #$0020 : BMI .normal_load_loop
     RTS
 
-if defined("SPACETIME_PRESERVE_INFOHUD")
+if !SPACETIME_PRESERVE_INFOHUD
   .check_sprite_object_ram
     ; Check if Y will cause us to reach sprite object ram
     TYA : CLC : ADC #($7EEF78-$7EC6E8) : CMP #$0000 : BPL .normal_load_loop
@@ -87,7 +87,7 @@ endif
     INX : INX : INY : INY
     CPX #($7EEF78-$7EC1C0) : BMI .loop_before_sprite_object_ram
 
-if defined("SPACETIME_PRESERVE_SPRITE_OBJECT_RAM")
+if !SPACETIME_PRESERVE_SPRITE_OBJECT_RAM
     ; Skip over sprite object ram
     ; Instead of load and store, load and load
   .loop_skip_sprite_object_ram

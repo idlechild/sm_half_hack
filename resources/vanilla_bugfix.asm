@@ -97,6 +97,12 @@ print pc, " vanilla_bugfix bank $90 end"
 
 
 
+org $9181A4
+hook_shinespark_determine_prospective_pose:
+    JSR $81AD
+
+
+
 org $91E6CF
 hook_item_change_update_healthalarm:
     PLB : PLP

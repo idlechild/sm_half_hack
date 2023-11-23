@@ -1,7 +1,7 @@
 lorom
 
 !VERSION_MAJOR = 1
-!VERSION_MINOR = 2
+!VERSION_MINOR = 3
 
 !WRAM_ROOM_ID = $079B
 !WRAM_ROOM_WIDTH_BLOCKS = $07A5
@@ -16,6 +16,7 @@ incsrc ../resources/macros.asm
 incsrc ../resources/crash.asm
 incsrc ../resources/decompression.asm
 ;incsrc ../resources/EternalSpikeSuit.asm
+incsrc ../resources/reduce_flashing.asm
 ;incsrc ../resources/startanywhere.asm
 incsrc ../resources/vanilla_bugfix.asm
 incsrc ../resources/version_display.asm
@@ -102,6 +103,7 @@ finish_door_transition_left:
 }
 
 print pc, " opendoors bank $80 end"
+warnpc $80FFC0
 
 
 
@@ -408,15 +410,10 @@ hook_plm_gate_entries:
     dw #plm_setup_downwards_gate_shotblock, $BCAF
     dw #plm_setup_upwards_gate_shotblock, $BCDF
 
-org $84C8CA
-hook_plm_escape_closing_gate_entry:
-    dw #plm_setup_escape_closing_gate, $BB34, $BB44
-    dw #plm_setup_escape_closing_gate, $BB44
 
 
-
-org $84F000
-print pc, " opendoors bank84 start"
+org $84F400
+print pc, " opendoors bank $84 start"
 
 plm_setup_downwards_open_gate:
 {
@@ -466,7 +463,7 @@ plm_setup_escape_closing_gate:
     JMP $B3C1
 }
 
-print pc, " opendoors bank84 end"
+print pc, " opendoors bank $84 end"
 
 
 
@@ -510,15 +507,17 @@ org $8FDE72
 hook_tourian_escape_1_room_asm:
     dw $C91E
 
-org $8FE652
-hook_room_state_check_morph_and_missiles:
-    LDA $0000,X
-    TAX
-    JMP $E5E6
+org $8F9767
+hook_pit_room_header_state_check:
+    dw #room_state_check_pass
+
+org $8F97C0
+hook_morph_elevator_header_state_check:
+    dw #room_state_check_pass
 
 
 
-org $8FEA00
+org $8FF400
 print pc, " opendoors bank $8F start"
 
 morphball_room_asm:
@@ -558,6 +557,13 @@ ceres_ridley_door_asm:
     PLP : RTS
 }
 
+room_state_check_pass:
+{
+    LDA $0000,X
+    TAX
+    JMP $E5E6
+}
+
 print pc, " opendoors bank $8F end"
 
 
@@ -595,17 +601,33 @@ org $9494ED
 samus_shotblock_horizontal_collision_pointer:
     dw #samus_shotblock_horizontal_collision
 
+org $94A17B
+shot_special_air_horizontal_reaction_pointer:
+    dw #shot_special_air_reaction
+
 org $94A183
 shot_bombable_air_horizontal_reaction_pointer:
     dw #shot_bombable_air_reaction
+
+org $94A18B
+shot_special_block_horizontal_reaction_pointer:
+    dw #shot_special_block_reaction
 
 org $94A193
 shot_bombable_block_horizontal_reaction_pointer:
     dw #shot_bombable_block_reaction
 
+org $94A19B
+shot_special_air_vertical_reaction_pointer:
+    dw #shot_special_air_reaction
+
 org $94A1A3
 shot_bombable_air_vertical_reaction_pointer:
     dw #shot_bombable_air_reaction
+
+org $94A1AB
+shot_special_block_vertical_reaction_pointer:
+    dw #shot_special_block_reaction
 
 org $94A1B3
 shot_bombable_block_vertical_reaction_pointer:
@@ -613,7 +635,7 @@ shot_bombable_block_vertical_reaction_pointer:
 
 
 
-org $94B200
+org $94B400
 print pc, " opendoors bank $94 start"
 
 samus_shotblock_horizontal_collision:
@@ -631,12 +653,34 @@ samus_shotblock_horizontal_collision:
     RTS
 }
 
+shot_special_air_reaction:
+{
+    LDA !WRAM_DOORS_ONLY : BNE .vanilla
+    LDX $0DC4 : LDA $7F6402,X : AND #$00FF
+    CMP #$0008 : BCS .vanilla
+    JMP $9E55
+  .vanilla
+    JMP $9D59
+}
+
 shot_bombable_air_reaction:
 {
     LDA !WRAM_DOORS_ONLY : BNE .vanilla
+    LDX $0DC4 : LDA $7F6402,X : AND #$00FF
+    CMP #$0008 : BCS .vanilla
     JMP $9E55
   .vanilla
     JMP $9FD6
+}
+
+shot_special_block_reaction:
+{
+    LDA !WRAM_DOORS_ONLY : BNE .vanilla
+    LDX $0DC4 : LDA $7F6402,X : AND #$00FF
+    CMP #$0008 : BCS .vanilla
+    JMP $9E73
+  .vanilla
+    JMP $9D5B
 }
 
 shot_bombable_block_reaction:

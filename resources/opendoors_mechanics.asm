@@ -8,6 +8,10 @@ endif
 
 
 
+org $82DE2F
+hook_mask_door_orientation:
+    AND #$00FB
+
 org $82E387
 hook_after_load_level_data:
     LDA #after_load_level_data

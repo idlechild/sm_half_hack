@@ -145,10 +145,6 @@ org $8288CC
 hook_demo_gauntlet_entrance_length:
     dw #$007C
 
-org $82DE2F
-hook_mask_door_orientation:
-    AND #$00FB
-
 org $82DE5A
 hook_horizontal_door_speed:
     JSR calc_horizontal_door_speed

@@ -447,3 +447,13 @@ org $A6F53C
 ceres_ridley_intro_door_instructions:
     dw $0001, $F921, $0001, $FAA7, $80ED, $F55E
 
+
+
+org $A7D4E5
+hook_draw_phantoon_door:
+    BRA $06
+
+org $A7DB89
+hook_restore_phantoon_door:
+    BRA $06
+

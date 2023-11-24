@@ -326,13 +326,3 @@ endif
 print pc, " opendoors_mechanics bank $94 end"
 warnpc $94C800
 
-
-
-org $A7D4E5
-hook_draw_phantoon_door:
-    BRA $06
-
-org $A7DB89
-hook_restore_phantoon_door:
-    BRA $06
-

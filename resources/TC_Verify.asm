@@ -7,6 +7,7 @@ pushtable
 table HUDfont.tbl
 
 !ram_MissingTiles = $0A02
+!ram_IGTText = $0DF8
 !ram_RidleyDefeated = $7ED910
 !ram_RidleyMapExplored = $7ED912
 !ram_FailAddress = $7ED824
@@ -31,6 +32,9 @@ print pc, " TC_Verify bank $A2 start"
 
 VerifyTrueCompletion:
 {
+    ; default to original IGT text
+    LDA #$EECD : STA !ram_IGTText
+
     ; check if Zebes timebomb set
     LDA $7ED821 : BIT #$0040 : BNE .verify_map
     ; overwritten code
@@ -66,6 +70,7 @@ else
 endif
     JSR VerifyItems : BCS .draw
     ; if we haven't, then we have a successful map only run
+    LDA #IGTMapCompletionDefinition : STA !ram_IGTText
     LDY #$000E
     BRA .draw
 
@@ -96,10 +101,12 @@ endif
     LDY #$000A : BRA .draw
 
   .suitless
+    LDA #IGTSuitlessTrueCompletionDefinition : STA !ram_IGTText
     LDY #$0010
     BRA .draw
 
   .checks_passed
+    LDA #IGTTrueCompletionDefinition : STA !ram_IGTText
     LDY #$000C
 
   .draw
@@ -288,14 +295,18 @@ DrawHUD:
     PHP
 
     LDA.w HUDTextLookupTable,Y : STA $12
+    LDA #$003C : STA $14
+    CPY #$000E : BNE .prepare_loop
+    LDA #$002C : STA $14
 
+  .prepare_loop
     SEP #$20
     LDY #$0000 : TYX
 
   .loop
     LDA ($12),Y : CMP #$FF : BEQ .done
     STA $7EC6B0,X : INX
-    LDA #$2C : STA $7EC6B0,X : INX
+    LDA $14 : STA $7EC6B0,X : INX
     INY : BRA .loop
 
   .done
@@ -365,7 +376,7 @@ SuccessMapOnly:
     db " 1244", $FF
 
 SuccessSuitless:
-    db "SUITE", $FF
+    db "SUITL", $FF
 
 Verified_Events:
     db $E5, $FF, $2F, $00 ; dummy byte for word access
@@ -499,5 +510,410 @@ CeresRidleyDefeated:
 }
 
 print pc, " TC_Verify bank $A6 end"
+
+
+org $81FA00
+print pc, " TC_Verify bank $81 start"
+
+AddSpritemapToOAMWithDataPointer:
+{
+    LDA $0000,Y : BEQ .done : BMI .pointer
+    ; Return to vanilla method before loading size
+    PHX : JMP $87AA
+
+  .done
+    RTL
+
+  .pointer
+    ; Set size and then return to vanilla method
+    PHX : TAX
+    LDA $0002,Y : STA $18
+    TXY : JMP $87AE
+}
+
+print pc, " TC_Verify bank $81 end"
+warnpc $81FF00
+
+
+org $8B97D2
+    JSL AddSpritemapToOAMWithDataPointer
+
+org $8BF3B1
+    LDY !ram_IGTText
+
+org $8BFA00
+print pc, " TC_Verify bank $8B start"
+
+IGTSuitlessTrueCompletionDefinition:
+    dw $F02B, $F3B9, #IGTSuitlessTrueCompletionInstructions
+
+IGTSuitlessTrueCompletionInstructions:
+    dw #$0008, #IGTText_S
+    dw #$0008, #IGTText_Su
+    dw #$0008, #IGTText_Sui
+    dw #$0008, #IGTText_Suit
+    dw #$0008, #IGTText_Suitl
+    dw #$0008, #IGTText_Suitle
+    dw #$0008, #IGTText_Suitles
+    dw #$0008, #IGTText_Suitless
+    dw #$000A, #IGTText_SuitlessT
+    dw #$0008, #IGTText_SuitlessTr
+    dw #$0008, #IGTText_SuitlessTru
+    dw #$0008, #IGTText_SuitlessTrue
+    dw #$000A, #IGTText_SuitlessTrueC
+    dw #$0008, #IGTText_SuitlessTrueCo
+    dw #$0008, #IGTText_SuitlessTrueCom
+    dw #$0008, #IGTText_SuitlessTrueComp
+    dw #$0008, #IGTText_SuitlessTrueCompl
+    dw #$0008, #IGTText_SuitlessTrueComple
+    dw #$0008, #IGTText_SuitlessTrueComplet
+    dw #$0008, #IGTText_SuitlessTrueCompleti
+    dw #$0008, #IGTText_SuitlessTrueCompletio
+    dw #$000A, #IGTText_SuitlessTrueCompletion
+    dw $F3CE
+  .loop
+    dw #$0008, #IGTText_SuitlessTrueCompletion
+    dw $94BC, #.loop
+
+IGTMapCompletionDefinition:
+    dw $F02B, $F3B9, #IGTMapCompletionInstructions
+
+IGTMapCompletionInstructions:
+    dw #$000D, #IGTText_M
+    dw #$000D, #IGTText_Ma
+    dw #$000D, #IGTText_Map
+    dw #$0013, #IGTText_MapC
+    dw #$000D, #IGTText_MapCo
+    dw #$000D, #IGTText_MapCom
+    dw #$000D, #IGTText_MapComp
+    dw #$000D, #IGTText_MapCompl
+    dw #$000D, #IGTText_MapComple
+    dw #$000D, #IGTText_MapComplet
+    dw #$000D, #IGTText_MapCompleti
+    dw #$000D, #IGTText_MapCompletio
+    dw #$0014, #IGTText_MapCompletion
+    dw $F3CE
+  .loop
+    dw #$0008, #IGTText_MapCompletion
+    dw $94BC, #.loop
+
+IGTTrueCompletionDefinition:
+    dw $F02B, $F3B9, #IGTTrueCompletionInstructions
+
+IGTTrueCompletionInstructions:
+    dw #$000C, #IGTText_T
+    dw #$000C, #IGTText_Tr
+    dw #$000C, #IGTText_Tru
+    dw #$000C, #IGTText_True
+    dw #$0013, #IGTText_TrueC
+    dw #$000C, #IGTText_TrueCo
+    dw #$000C, #IGTText_TrueCom
+    dw #$000C, #IGTText_TrueComp
+    dw #$000C, #IGTText_TrueCompl
+    dw #$000C, #IGTText_TrueComple
+    dw #$000C, #IGTText_TrueComplet
+    dw #$000C, #IGTText_TrueCompleti
+    dw #$000C, #IGTText_TrueCompletio
+    dw #$0013, #IGTText_TrueCompletion
+    dw $F3CE
+  .loop
+    dw #$0008, #IGTText_TrueCompletion
+    dw $94BC, #.loop
+
+print pc, " TC_Verify bank $8B end"
+
+
+org $8CAB6B
+    dw $B491, #$0002    ; Point to 'C'
+IGTText_S:
+    dw #IGTTextData_S, #$0002
+IGTText_Su:
+    dw #IGTTextData_Su, #$0004
+warnpc $8CAB77
+
+org $8CAB77
+    dw $B487, #$0004    ; Point to 'Co'
+IGTText_Sui:
+    dw #IGTTextData_Sui, #$0006
+IGTText_Suit:
+    dw #IGTTextData_Suit, #$0008
+IGTText_Suitl:
+    dw #IGTTextData_Suitl, #$000A
+IGTText_Suitle:
+    dw #IGTTextData_Suitle, #$000C
+warnpc $8CAB8D
+
+org $8CAB8D
+    dw $B47D, #$0006    ; Point to 'Com'
+IGTText_Suitles:
+    dw #IGTTextData_Suitles, #$000E
+IGTText_Suitless:
+    dw #IGTTextData_Suitless, #$0010
+IGTText_SuitlessT:
+    dw #IGTTextData_SuitlessT, #$0012
+IGTText_SuitlessTr:
+    dw #IGTTextData_SuitlessTr, #$0014
+IGTText_SuitlessTru:
+    dw #IGTTextData_SuitlessTru, #$0016
+IGTText_SuitlessTrue:
+    dw #IGTTextData_SuitlessTrue, #$0018
+IGTText_SuitlessTrueC:
+    dw #IGTTextData_SuitlessTrueC, #$001A
+warnpc $8CABAD
+
+org $8CABAD
+    dw $B473, #$0008    ; Point to 'Comp'
+IGTText_SuitlessTrueCo:
+    dw #IGTTextData_SuitlessTrueCo, #$001C
+IGTText_SuitlessTrueCom:
+    dw #IGTTextData_SuitlessTrueCom, #$001E
+IGTText_SuitlessTrueComp:
+    dw #IGTTextData_SuitlessTrueComp, #$0020
+IGTText_SuitlessTrueCompl:
+    dw #IGTTextData_SuitlessTrueCompl, #$0022
+IGTText_SuitlessTrueComple:
+    dw #IGTTextData_SuitlessTrueComple, #$0024
+IGTText_SuitlessTrueComplet:
+    dw #IGTTextData_SuitlessTrueComplet, #$0026
+IGTText_SuitlessTrueCompleti:
+    dw #IGTTextData_SuitlessTrueCompleti, #$0028
+IGTText_SuitlessTrueCompletio:
+    dw #IGTTextData_SuitlessTrueCompletio, #$002A
+warnpc $8CABD7
+
+org $8CABD7
+    dw $B469, #$000A    ; Point to 'Compl'
+IGTText_M:
+    dw #IGTTextData_M, #$0002
+IGTText_Ma:
+    dw #IGTTextData_Ma, #$0004
+IGTText_Map:
+    dw #IGTTextData_Map, #$0006
+IGTText_MapC:
+    dw #IGTTextData_MapC, #$0008
+IGTText_MapCo:
+    dw #IGTTextData_MapCo, #$000A
+IGTText_MapCom:
+    dw #IGTTextData_MapCom, #$000C
+IGTText_MapComp:
+    dw #IGTTextData_MapComp, #$000E
+IGTText_MapCompl:
+    dw #IGTTextData_MapCompl, #$0010
+IGTText_MapComple:
+    dw #IGTTextData_MapComple, #$0012
+IGTText_MapComplet:
+    dw #IGTTextData_MapComplet, #$0014
+IGTText_MapCompleti:
+    dw #IGTTextData_MapCompleti, #$0016
+IGTText_MapCompletio:
+    dw #IGTTextData_MapCompletio, #$0018
+warnpc $8CAC0B
+
+org $8CAC0B
+    dw $B45F, #$000C    ; Point to 'Comple'
+IGTText_T:
+    dw #IGTTextData_T, #$0002
+IGTText_Tr:
+    dw #IGTTextData_Tr, #$0004
+IGTText_Tru:
+    dw #IGTTextData_Tru, #$0006
+IGTText_True:
+    dw #IGTTextData_True, #$0008
+IGTText_TrueC:
+    dw #IGTTextData_TrueC, #$000A
+IGTText_TrueCo:
+    dw #IGTTextData_TrueCo, #$000C
+IGTText_TrueCom:
+    dw #IGTTextData_TrueCom, #$000E
+IGTText_TrueComp:
+    dw #IGTTextData_TrueComp, #$0010
+IGTText_TrueCompl:
+    dw #IGTTextData_TrueCompl, #$0012
+IGTText_TrueComple:
+    dw #IGTTextData_TrueComple, #$0014
+IGTText_TrueComplet:
+    dw #IGTTextData_TrueComplet, #$0016
+IGTText_TrueCompleti:
+    dw #IGTTextData_TrueCompleti, #$0018
+IGTText_TrueCompletio:
+    dw #IGTTextData_TrueCompletio, #$001A
+warnpc $8CAC49
+
+org $8CAC49
+    dw $B455, #$000E    ; Point to 'Complet'
+warnpc $8CAC91
+
+org $8CAC91
+    dw $B44B, #$0010    ; Point to 'Complete'
+warnpc $8CACE3
+
+org $8CACE3
+    dw $B441, #$0012    ; Point to 'Completed'
+warnpc $8CAD3F
+
+org $8CAD3F
+    dw $B437, #$0014    ; Point to 'Completed S'
+warnpc $8CADA5
+
+org $8CADA5
+    dw $B42D, #$0016    ; Point to 'Completed Su'
+warnpc $8CAE15
+
+org $8CAE15
+    dw $B423, #$0018    ; Point to 'Completed Suc'
+warnpc $8CAE8F
+
+org $8CAE8F
+    dw $B419, #$001A    ; Point to 'Completed Succ'
+warnpc $8CAF13
+
+org $8CAF13
+    dw $B40F, #$001C    ; Point to 'Completed Succe'
+warnpc $8CAFA1
+
+org $8CAFA1
+    dw $B405, #$001E    ; Point to 'Completed Succes'
+warnpc $8CB039
+
+org $8CB039
+    dw $B3FB, #$0020    ; Point to 'Completed Success'
+warnpc $8CB0DB
+
+org $8CB0DB
+    dw $B3F1, #$0022    ; Point to 'Completed Successf'
+warnpc $8CB187
+
+org $8CB187
+    dw $B3E7, #$0024    ; Point to 'Completed Successfu'
+warnpc $8CB23D
+
+org $8CB23D
+    dw $B3DD, #$0026    ; Point to 'Completed Successful'
+warnpc $8CB2FD
+
+org $8CB2FD
+    dw $B3D3, #$0028    ; Point to 'Completed Successfull'
+warnpc $8CB3C7
+
+org $8CF400
+print pc, " TC_Verify bank $8C start"
+
+macro IGTTextChar(xPos, yPos, cByte)
+    dw <xPos>
+    db <yPos>+$08
+    dw $3110+<cByte>
+    dw <xPos>
+    db <yPos>
+    dw $3100+<cByte>
+endmacro
+
+IGTText_SuitlessTrueCompletion:
+    dw #$002C
+IGTTextData_SuitlessTrueCompletion:
+    %IGTTextChar($58, $10, $2D)
+IGTTextData_SuitlessTrueCompletio:
+    %IGTTextChar($50, $10, $2E)
+IGTTextData_SuitlessTrueCompleti:
+    %IGTTextChar($48, $10, $28)
+IGTTextData_SuitlessTrueComplet:
+    %IGTTextChar($40, $10, $43)
+IGTTextData_SuitlessTrueComple:
+    %IGTTextChar($38, $10, $24)
+IGTTextData_SuitlessTrueCompl:
+    %IGTTextChar($30, $10, $2B)
+IGTTextData_SuitlessTrueComp:
+    %IGTTextChar($28, $10, $2F)
+IGTTextData_SuitlessTrueCom:
+    %IGTTextChar($20, $10, $2C)
+IGTTextData_SuitlessTrueCo:
+    %IGTTextChar($18, $10, $2E)
+IGTTextData_SuitlessTrueC:
+    %IGTTextChar($10, $10, $22)
+IGTTextData_SuitlessTrue:
+    %IGTTextChar($00, $10, $24)
+IGTTextData_SuitlessTru:
+    %IGTTextChar($1F8, $10, $44)
+IGTTextData_SuitlessTr:
+    %IGTTextChar($1F0, $10, $41)
+IGTTextData_SuitlessT:
+    %IGTTextChar($1E8, $10, $43)
+IGTTextData_Suitless:
+    %IGTTextChar($1D8, $10, $42)
+IGTTextData_Suitles:
+    %IGTTextChar($1D0, $10, $42)
+IGTTextData_Suitle:
+    %IGTTextChar($1C8, $10, $24)
+IGTTextData_Suitl:
+    %IGTTextChar($1C0, $10, $2B)
+IGTTextData_Suit:
+    %IGTTextChar($1B8, $10, $43)
+IGTTextData_Sui:
+    %IGTTextChar($1B0, $10, $28)
+IGTTextData_Su:
+    %IGTTextChar($1A8, $10, $44)
+IGTTextData_S:
+    %IGTTextChar($1A0, $10, $42)
+
+IGTText_MapCompletion:
+    dw #$001A
+IGTTextData_MapCompletion:
+    %IGTTextChar($30, $10, $2D)
+IGTTextData_MapCompletio:
+    %IGTTextChar($28, $10, $2E)
+IGTTextData_MapCompleti:
+    %IGTTextChar($20, $10, $28)
+IGTTextData_MapComplet:
+    %IGTTextChar($18, $10, $43)
+IGTTextData_MapComple:
+    %IGTTextChar($10, $10, $24)
+IGTTextData_MapCompl:
+    %IGTTextChar($08, $10, $2B)
+IGTTextData_MapComp:
+    %IGTTextChar($00, $10, $2F)
+IGTTextData_MapCom:
+    %IGTTextChar($1F8, $10, $2C)
+IGTTextData_MapCo:
+    %IGTTextChar($1F0, $10, $2E)
+IGTTextData_MapC:
+    %IGTTextChar($1E8, $10, $22)
+IGTTextData_Map:
+    %IGTTextChar($1D8, $10, $2F)
+IGTTextData_Ma:
+    %IGTTextChar($1D0, $10, $20)
+IGTTextData_M:
+    %IGTTextChar($1C8, $10, $2C)
+
+IGTText_TrueCompletion:
+    dw #$001C
+IGTTextData_TrueCompletion:
+    %IGTTextChar($30, $10, $2D)
+IGTTextData_TrueCompletio:
+    %IGTTextChar($28, $10, $2E)
+IGTTextData_TrueCompleti:
+    %IGTTextChar($20, $10, $28)
+IGTTextData_TrueComplet:
+    %IGTTextChar($18, $10, $43)
+IGTTextData_TrueComple:
+    %IGTTextChar($10, $10, $24)
+IGTTextData_TrueCompl:
+    %IGTTextChar($08, $10, $2B)
+IGTTextData_TrueComp:
+    %IGTTextChar($00, $10, $2F)
+IGTTextData_TrueCom:
+    %IGTTextChar($1F8, $10, $2C)
+IGTTextData_TrueCo:
+    %IGTTextChar($1F0, $10, $2E)
+IGTTextData_TrueC:
+    %IGTTextChar($1E8, $10, $22)
+IGTTextData_True:
+    %IGTTextChar($1D8, $10, $24)
+IGTTextData_Tru:
+    %IGTTextChar($1D0, $10, $44)
+IGTTextData_Tr:
+    %IGTTextChar($1C8, $10, $41)
+IGTTextData_T:
+    %IGTTextChar($1C0, $10, $43)
+
+print pc, " TC_Verify bank $8C end"
 
 pulltable

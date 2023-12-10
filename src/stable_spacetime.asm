@@ -6,10 +6,6 @@ incsrc ../resources/spacetime.asm
 
 
 
-org $8189B5
-hook_options_mode_spritemap_pointer:
-    dw $D00B
-
 org $81B40A
 hook_samus_data_upper_text:
 table LargeUpperChar.tbl

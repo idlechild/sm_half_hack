@@ -88,6 +88,11 @@ endif
     CPX #($7EEF78-$7EC1C0) : BMI .loop_before_sprite_object_ram
 
 if !SPACETIME_PRESERVE_SPRITE_OBJECT_RAM
+    ; Check if we are copying from unmapped memory ($004500-$007FFF range)
+    ; If not then overwrite sprite object ram
+    TYA : ADC $00 : CMP #$4500 : BCC .overwrite_sprite_object_ram
+    CMP #$7C01 : BCS .overwrite_sprite_object_ram
+
     ; Skip over sprite object ram
     ; Instead of load and store, load and load
   .loop_skip_sprite_object_ram
@@ -95,9 +100,10 @@ if !SPACETIME_PRESERVE_SPRITE_OBJECT_RAM
     LDA [$00],Y
     INX : INX : INY : INY
     CPX #($7EF378-$7EC1C0) : BMI .loop_skip_sprite_object_ram
-endif
 
-    ; Check if we finished spacetime while skipping over sprite object ram
+  .overwrite_sprite_object_ram
+endif
+    ; Check if we finished spacetime while reaching or skipping over sprite object ram
     CPY #$0020 : BMI .normal_load_loop
     RTS
 }

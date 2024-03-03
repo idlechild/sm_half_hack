@@ -1,7 +1,7 @@
 lorom
 
 !VERSION_MAJOR = 1
-!VERSION_MINOR = 3
+!VERSION_MINOR = 4
 
 !WRAM_ROOM_ID_LONG = $7E079B
 !WRAM_DOORS_ONLY = $09EA
@@ -28,7 +28,11 @@ incsrc ../resources/spacetime.asm
 !EDITED_TILEMAP_TEXT = "DOORS_ONLY____ON______OFF_"
 incsrc ../resources/SpecialSettingsMenu.asm
 
-!SKIP_DOOR_VERIFICATION = 1
+!TC_GTMAX = "_138%"
+!TC_GTMAX_MISSILES = 330
+!TC_GTMAX_PBS = 70
+!TC_GTMAX_SUPERS = 70
+!TC_SKIP_DOOR_VERIFICATION = 1
 incsrc ../resources/TC_Verify.asm
 
 
@@ -231,6 +235,20 @@ print pc, " opendoors bank $82 end"
 
 
 
+org $83A78C
+hook_layout_asm_pants_to_pants:
+    dw #$D646
+    db #$00, #$04, #$01, #$26, #$01, #$03
+    dw #$8000
+    dw #layout_asm_pants_to_pants_scrolls
+
+org $83A8C4
+hook_layout_asm_shaktool_to_pants:
+    dw #$D646
+    db #$00, #$05, #$0E, #$16, #$01, #$02
+    dw #$8000
+    dw #layout_asm_shaktool_to_pants_scrolls
+
 org $83AA96
 hook_mb_to_tourian_escape_1_door_asm:
     dw $C91F
@@ -270,6 +288,7 @@ version_load_character:
 }
 
 print pc, " opendoors bank $8B end"
+warnpc $8BFA00
 
 
 
@@ -293,10 +312,63 @@ org $8F97C0
 hook_morph_elevator_header_state_check:
     dw #room_state_check_pass
 
+org $8FA836
+hook_ice_beam_gate_room_plms:
+    dw #ice_beam_gate_room_plms
+
+org $8FC6AB
+hook_pants_room_plms:
+    dw $B703, $3215, $D6C8
+    dw $B63B, $3216, $8000
+    dw $B63B, $3217, $8000
+    dw $B63B, $3218, $8000
+    dw $B63B, $3219, $8000
+    dw $B63B, $221A, $8000
+    dw $0000
+
+org $8FD6C8
+hook_pants_room_plm_scroll_data:
+    db $05
+
 
 
 org $8FF400
 print pc, " opendoors bank $8F start"
+
+layout_asm_shaktool_to_pants_scrolls:
+    PHP
+    %a8()
+
+layout_asm_to_pants_scrolls:
+{
+    TDC : STA $7ECD22 : STA $7ECD24 : STA $7ECD26
+    LDA #$02 : STA $7ECD20 : STA $7ECD21
+    PLP
+    RTS
+}
+
+layout_asm_pants_to_pants_scrolls:
+{
+    PHP
+    %a8()
+    TDC : STA $7ECD25
+    INC : STA $7ECD27
+    BRA layout_asm_to_pants_scrolls
+}
+
+ice_beam_gate_room_plms:
+    dw $B703, $2D37, $A860
+    dw $B63B, $2D38, $8000
+    dw $B703, $2132, #ice_beam_gate_room_plm_scroll_data
+    dw $B63B, $2133, $8000
+    dw $B63B, $2134, $8000
+    dw $B63B, $2135, $8000
+    dw $B63B, $2136, $8000
+    dw $B63B, $2137, $8000
+    dw $0000
+
+ice_beam_gate_room_plm_scroll_data:
+    db $0A, $02, $80
 
 morphball_room_asm:
 {
@@ -374,7 +446,7 @@ hook_set_shinespark_finish_handler:
 
 
 
-org $90F900
+org $90F880
 print pc, " opendoors bank $90 start"
 
 shinespark_finish_handler:
@@ -384,6 +456,7 @@ shinespark_finish_handler:
 }
 
 print pc, " opendoors bank $90 end"
+warnpc $90F900
 
 
 

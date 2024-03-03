@@ -168,6 +168,74 @@ hook_plm_gate_entries:
     dw #plm_setup_downwards_gate_shotblock, $BCAF
     dw #plm_setup_upwards_gate_shotblock, $BCDF
 
+org $84CDF5
+hook_plm_setup_speed_blocks:
+if defined("WRAM_DOORS_ONLY")
+    LDA !WRAM_DOORS_ONLY : BNE .vanilla
+endif
+    LDA $0A6E : CMP #$0003 : BEQ .no_collision
+  .vanilla
+    LDA $0A1C
+    CMP #$00C9 : BCC .collision
+    CMP #$00CF : BCS .collision
+    BRA .no_collision
+  .collision
+    TDC : STA $1C37,Y
+    SEC : RTS
+warnpc $84CE1E
+
+org $84CE1E
+  .no_collision
+
+org $84CE8E
+hook_plm_setup_bomb_blocks:
+if defined("WRAM_DOORS_ONLY")
+    LDA !WRAM_DOORS_ONLY : BNE .vanilla
+endif
+    LDA $0A6E : CMP #$0003 : BEQ .no_collision
+  .vanilla
+    LDA $0A1C
+    CMP #$0081 : BEQ .no_collision
+    CMP #$0082 : BEQ .no_collision
+    CMP #$00C9 : BCC .collision
+    CMP #$00CF : BCS .collision
+    BRA .no_collision
+  .collision
+    TDC : STA $1C37,Y
+    SEC : RTS
+warnpc $84CEC1
+
+org $84CEC1
+  .no_collision
+
+org $84D028
+hook_plm_shootable_speed_blocks:
+    dw $CE1E, $C974
+    dw $CE1E, $C9E4
+
+org $84D044
+hook_plm_crumble_shot_block_entries:
+    dw #plm_setup_crumble_blocks, $C9F9
+    dw #plm_setup_crumble_blocks, $CA1C
+    dw #plm_setup_crumble_blocks, $CA41
+    dw #plm_setup_crumble_blocks, $CA66
+    dw #plm_setup_crumble_blocks, $CA8B
+    dw #plm_setup_crumble_blocks, $CAA0
+    dw #plm_setup_crumble_blocks, $CAB5
+    dw #plm_setup_crumble_blocks, $CACA
+    dw #plm_setup_respawn_shot_blocks, $CADF
+    dw #plm_setup_respawn_shot_blocks, $CB02
+    dw #plm_setup_respawn_shot_blocks, $CB27
+    dw #plm_setup_respawn_shot_blocks, $CB4C
+    dw #plm_setup_shot_blocks, $CBB7
+    dw #plm_setup_shot_blocks, $CBCC
+    dw #plm_setup_shot_blocks, $CBE1
+    dw #plm_setup_shot_blocks, $CBF6
+    dw #plm_setup_pb_blocks, $CB94
+    dw #plm_setup_pb_blocks, $CC20
+    dw #plm_setup_super_blocks, $CB71
+    dw #plm_setup_super_blocks, $CC0B
+
 
 
 org $84F400
@@ -213,13 +281,117 @@ plm_setup_delete:
     LDA #$AAE3 : STA $1D27,Y
     RTS
 
+plm_setup_crumble_blocks:
+if defined("WRAM_DOORS_ONLY")
+    LDA !WRAM_DOORS_ONLY : BNE .vanilla
+endif
+    LDA $0A6E : CMP #$0003 : BEQ .screw
+  .vanilla
+    JMP $CE37
+  .screw
+    LDX $1C87,Y : LDA $7F0002,X
+    AND #$F000 : ORA #$00BC : STA $1E17,Y
+    AND #$0FFF : STA $7F0002,X
+    TYX : LDA #$0004 : STA $7EDE1C,X
+    CLC : RTS
+
+plm_setup_respawn_shot_blocks:
+if defined("WRAM_DOORS_ONLY")
+    LDA !WRAM_DOORS_ONLY : BNE .vanilla
+endif
+    LDX $1C87,Y : LDA $7F0002,X
+    AND #$F000 : ORA #$0052 : STA $1E17,Y
+    AND #$0FFF : STA $7F0002,X
+    CLC : RTS
+if defined("WRAM_DOORS_ONLY")
+  .vanilla
+    JMP $CE6B
+endif
+
+plm_setup_shot_blocks:
+if defined("WRAM_DOORS_ONLY")
+    LDA !WRAM_DOORS_ONLY : BNE .vanilla
+endif
+    LDX $1C87,Y : LDA $7F0002,X
+    AND #$0FFF : STA $7F0002,X
+    CLC : RTS
+if defined("WRAM_DOORS_ONLY")
+  .vanilla
+    JMP $B3C1
+endif
+
+plm_setup_pb_blocks:
+if defined("WRAM_DOORS_ONLY")
+    LDA !WRAM_DOORS_ONLY : BNE .vanilla
+endif
+    LDX $1C87,Y : LDA $7F0002,X
+    AND #$F000 : ORA #$0057 : STA $1E17,Y
+    AND #$0FFF : STA $7F0002,X
+    CLC : RTS
+if defined("WRAM_DOORS_ONLY")
+  .vanilla
+    JMP $CF2E
+endif
+
+plm_setup_super_blocks:
+if defined("WRAM_DOORS_ONLY")
+    LDA !WRAM_DOORS_ONLY : BNE .vanilla
+endif
+    LDX $1C87,Y : LDA $7F0002,X
+    AND #$F000 : ORA #$009F : STA $1E17,Y
+    AND #$0FFF : STA $7F0002,X
+    CLC : RTS
+if defined("WRAM_DOORS_ONLY")
+  .vanilla
+    JMP $CF67
+endif
+
 print pc, " opendoors_mechanics bank $84 end"
+
+
+
+org $90A373
+hook_samus_movement_walljump:
+    dw #samus_movement_walljump
+
+
+
+org $90F900
+print pc, " opendoors_mechanics bank $90 start"
+
+samus_movement_walljump:
+{
+if defined("WRAM_DOORS_ONLY")
+    LDA !WRAM_DOORS_ONLY : BNE .vanilla
+endif
+    LDA $09A2 : BIT #$0008 : BEQ .not_screw
+  .screw
+    LDA #$0003 : STA $0A6E
+    BRA .jumping_movement
+if defined("WRAM_DOORS_ONLY")
+  .vanilla
+    LDA $0A96 : CMP #$0017 : BPL .screw
+    CMP #$0003 : BMI .jumping_movement
+endif
+  .not_screw
+    LDA $0CD0 : CMP #$003C : BMI .jumping_movement
+    LDA #$0004 : STA $0A6E
+  .jumping_movement
+    JMP $8FB3
+}
+
+print pc, " opendoors_mechanics bank $90 end"
+warnpc $90FA00
 
 
 
 org $9494ED
 samus_shotblock_horizontal_collision_pointer:
     dw #samus_shotblock_horizontal_collision
+
+org $94950D
+samus_shotblock_vertical_collision_pointer:
+    dw #samus_shotblock_vertical_collision
 
 org $94A17B
 shot_special_air_horizontal_reaction_pointer:
@@ -261,18 +433,43 @@ print pc, " opendoors_mechanics bank $94 start"
 samus_shotblock_horizontal_collision:
 {
 if defined("WRAM_DOORS_ONLY")
-    LDA !WRAM_DOORS_ONLY : BNE .done
+    LDA !WRAM_DOORS_ONLY : BNE .vanilla
 endif
+    LDA $0A6E : CMP #$0003 : BEQ .screw
     LDX $0DC4 : LDA $7F6402,X
-    AND #$00FF : CMP #$0004 : BCC .respawn
+    AND #$00FF : CMP #$0045 : BEQ .vanilla
+    CMP #$0004 : BCC .respawn
+  .fallback
     LDA #$D040 : BRA .plm
   .respawn
     LDA #$D038
   .plm
     JSL $8484E7 : BCC .done
+  .vanilla
     JMP $8F49
   .done
     RTS
+  .screw
+    LDX $0DC4 : LDA $7F6402,X
+    AND #$00FF : CMP #$0045 : BEQ .vanilla
+    CMP #$000C : BCS .fallback
+    JSR $9E73
+    CLC : RTS
+}
+
+samus_shotblock_vertical_collision:
+{
+if defined("WRAM_DOORS_ONLY")
+    LDA !WRAM_DOORS_ONLY : BNE .vanilla
+endif
+    LDA $0A6E : CMP #$0003 : BEQ .screw
+  .vanilla
+    JMP $8F82
+  .screw
+    LDX $0DC4 : LDA $7F6402,X
+    AND #$00FF : CMP #$000C : BCS .vanilla
+    JSR $9E73
+    CLC : RTS
 }
 
 shot_special_air_reaction:
@@ -284,7 +481,7 @@ endif
     CMP #$0008 : BCS .vanilla
     JMP $9E55
   .vanilla
-    JMP $9D59
+    CLC : RTS
 }
 
 shot_bombable_air_reaction:
@@ -305,10 +502,23 @@ if defined("WRAM_DOORS_ONLY")
     LDA !WRAM_DOORS_ONLY : BNE .vanilla
 endif
     LDX $0DC4 : LDA $7F6402,X : AND #$00FF
-    CMP #$0008 : BCS .vanilla
-    JMP $9E73
+    CMP #$0008 : BCC .crumble
+    CMP #$000E : BEQ .speed_respawn
+    CMP #$000F : BEQ .speed
+    CMP #$0082 : BCC .vanilla
+    LDA $079F : CMP #$0001 : BEQ .speed
   .vanilla
-    JMP $9D5B
+    SEC : RTS
+  .crumble
+    JMP $9E73
+  .speed_respawn
+    LDA #$D028 : JSL $8484E7
+    REP #$40
+    SEC : RTS
+  .speed
+    LDA #$D02C : JSL $8484E7
+    REP #$40
+    SEC : RTS
 }
 
 shot_bombable_block_reaction:
@@ -325,4 +535,53 @@ endif
 
 print pc, " opendoors_mechanics bank $94 end"
 warnpc $94C800
+
+
+
+org $A0D517
+hook_vertical_timed_shutter_main_ai:
+    dw #vertical_timed_shutter_main_ai
+
+org $A0D557
+hook_vertical_shootable_shutter_main_ai:
+    dw #vertical_shootable_shutter_main_ai
+
+org $A0D597
+hook_horizontal_shootable_shutter_main_ai:
+    dw #horizontal_shootable_shutter_main_ai
+
+org $A0D5D7
+hook_destructible_shutter_main_ai:
+    dw #vertical_shootable_shutter_main_ai
+
+
+
+org $A2F4C0
+print pc, " opendoors_mechanics bank $A2 start"
+
+vertical_timed_shutter_main_ai:
+if defined("WRAM_DOORS_ONLY")
+    LDA !WRAM_DOORS_ONLY : BEQ delete_main_ai
+    JMP $EAB6
+endif
+
+vertical_shootable_shutter_main_ai:
+if defined("WRAM_DOORS_ONLY")
+    LDA !WRAM_DOORS_ONLY : BEQ delete_main_ai
+    JMP $EED1
+endif
+
+horizontal_shootable_shutter_main_ai:
+if defined("WRAM_DOORS_ONLY")
+    LDA !WRAM_DOORS_ONLY : BEQ delete_main_ai
+    JMP $F1DE
+endif
+
+delete_main_ai:
+    LDA #$0200
+    STA $0F86,X
+    RTL
+
+print pc, " opendoors_mechanics bank $A2 end"
+warnpc $A2F500
 

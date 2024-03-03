@@ -1,5 +1,5 @@
 
-org $8BFA00
+org $8BFE00
 print pc, " decompression bank $8B start"
 
 ; Decompression optimization adapted from Kejardon, with fixes by PJBoy and Maddo

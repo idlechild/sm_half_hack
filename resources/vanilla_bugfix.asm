@@ -94,6 +94,7 @@ clear_escape_timer:
 }
 
 print pc, " vanilla_bugfix bank $90 end"
+warnpc $90F880
 
 
 

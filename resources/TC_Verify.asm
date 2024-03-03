@@ -52,7 +52,15 @@ VerifyTrueCompletion:
     JSR DrawMissingTiles
 
   .ignore
-    ; overwritten code
+if defined("TC_GTMAX")
+    JSR VerifyGTMax
+    BCC .overwritten_code
+    LDA #IGTGTMaxCompletionDefinition : STA !ram_IGTText
+    LDY #$0012
+    BRA .draw
+
+  .overwritten_code
+endif
     LDX #$0000 : TXY
     LDA #$AA5D : STA $0FB2,X
     RTL
@@ -64,7 +72,7 @@ VerifyTrueCompletion:
     ; check if we have passed anything else
     JSR VerifyEvents : BCS .draw
     JSR VerifyMapStations : BCS .draw
-if defined("SKIP_DOOR_VERIFICATION")
+if defined("TC_SKIP_DOOR_VERIFICATION")
 else
     JSR VerifyDoors : BCS .draw
 endif
@@ -219,7 +227,7 @@ VerifyBosses:
 
 VerifyDoors:
 {
-if defined("SKIP_DOOR_VERIFICATION")
+if defined("TC_SKIP_DOOR_VERIFICATION")
     SEC : RTS
 endif
 
@@ -274,6 +282,25 @@ VerifySuitless:
     TXA : STA !ram_FailAddress
     CLC : RTS
 }
+
+if defined("TC_GTMAX")
+VerifyGTMax:
+{
+    LDA $09A4 : CMP #$F33F : BNE .failed
+    LDA $09A8 : CMP #$100F : BNE .failed
+    LDA $09C4 : CMP.w #2100 : BNE .failed
+    LDA $09D6 : CMP.w #700 : BNE .failed
+    LDA $09C8 : CMP.w #!TC_GTMAX_MISSILES : BNE .failed
+    LDA $09CC : CMP.w #!TC_GTMAX_SUPERS : BNE .failed
+    LDA $09D0 : CMP.w #!TC_GTMAX_PBS : BNE .failed
+
+    ; Verified
+    SEC : RTS
+
+  .failed
+    CLC : RTS
+}
+endif
 
 VerifyCeresRidleyMap:
 {
@@ -350,6 +377,9 @@ HUDTextLookupTable:
     dw #Success
     dw #SuccessMapOnly
     dw #SuccessSuitless
+if defined("TC_GTMAX")
+    dw #SuccessGTMax
+endif
 
 Fail_MapTiles:
     db "MAP", $FF
@@ -377,6 +407,11 @@ SuccessMapOnly:
 
 SuccessSuitless:
     db "SUITL", $FF
+
+if defined("TC_GTMAX")
+SuccessGTMax:
+    db "!TC_GTMAX", $FF
+endif
 
 Verified_Events:
     db $E5, $FF, $2F, $00 ; dummy byte for word access
@@ -620,6 +655,30 @@ IGTTrueCompletionInstructions:
     dw #$0008, #IGTText_TrueCompletion
     dw $94BC, #.loop
 
+IGTGTMaxCompletionDefinition:
+    dw $F02B, $F3B9, #IGTGTMaxCompletionInstructions
+
+IGTGTMaxCompletionInstructions:
+    dw #$000A, #IGTText_G
+    dw #$000A, #IGTText_GT
+    dw #$0014, #IGTText_GTM
+    dw #$000A, #IGTText_GTMa
+    dw #$000A, #IGTText_GTMax
+    dw #$0014, #IGTText_GTMaxC
+    dw #$000A, #IGTText_GTMaxCo
+    dw #$000A, #IGTText_GTMaxCom
+    dw #$000A, #IGTText_GTMaxComp
+    dw #$000A, #IGTText_GTMaxCompl
+    dw #$000A, #IGTText_GTMaxComple
+    dw #$000A, #IGTText_GTMaxComplet
+    dw #$000A, #IGTText_GTMaxCompleti
+    dw #$000A, #IGTText_GTMaxCompletio
+    dw #$0016, #IGTText_GTMaxCompletion
+    dw $F3CE
+  .loop
+    dw #$0008, #IGTText_GTMaxCompletion
+    dw $94BC, #.loop
+
 print pc, " TC_Verify bank $8B end"
 
 
@@ -741,6 +800,34 @@ warnpc $8CAC49
 
 org $8CAC49
     dw $B455, #$000E    ; Point to 'Complet'
+IGTText_G:
+    dw #IGTTextData_G, #$0002
+IGTText_GT:
+    dw #IGTTextData_GT, #$0004
+IGTText_GTM:
+    dw #IGTTextData_GTM, #$0006
+IGTText_GTMa:
+    dw #IGTTextData_GTMa, #$0008
+IGTText_GTMax:
+    dw #IGTTextData_GTMax, #$000A
+IGTText_GTMaxC:
+    dw #IGTTextData_GTMaxC, #$000C
+IGTText_GTMaxCo:
+    dw #IGTTextData_GTMaxCo, #$000E
+IGTText_GTMaxCom:
+    dw #IGTTextData_GTMaxCom, #$0010
+IGTText_GTMaxComp:
+    dw #IGTTextData_GTMaxComp, #$0012
+IGTText_GTMaxCompl:
+    dw #IGTTextData_GTMaxCompl, #$0014
+IGTText_GTMaxComple:
+    dw #IGTTextData_GTMaxComple, #$0016
+IGTText_GTMaxComplet:
+    dw #IGTTextData_GTMaxComplet, #$0018
+IGTText_GTMaxCompleti:
+    dw #IGTTextData_GTMaxCompleti, #$001A
+IGTText_GTMaxCompletio:
+    dw #IGTTextData_GTMaxCompletio, #$001C
 warnpc $8CAC91
 
 org $8CAC91
@@ -913,6 +1000,39 @@ IGTTextData_Tr:
     %IGTTextChar($1C8, $10, $41)
 IGTTextData_T:
     %IGTTextChar($1C0, $10, $43)
+
+IGTText_GTMaxCompletion:
+    dw #$001E
+IGTTextData_GTMaxCompletion:
+    %IGTTextChar($38, $10, $2D)
+IGTTextData_GTMaxCompletio:
+    %IGTTextChar($30, $10, $2E)
+IGTTextData_GTMaxCompleti:
+    %IGTTextChar($28, $10, $28)
+IGTTextData_GTMaxComplet:
+    %IGTTextChar($20, $10, $43)
+IGTTextData_GTMaxComple:
+    %IGTTextChar($18, $10, $24)
+IGTTextData_GTMaxCompl:
+    %IGTTextChar($10, $10, $2B)
+IGTTextData_GTMaxComp:
+    %IGTTextChar($08, $10, $2F)
+IGTTextData_GTMaxCom:
+    %IGTTextChar($00, $10, $2C)
+IGTTextData_GTMaxCo:
+    %IGTTextChar($1F8, $10, $2E)
+IGTTextData_GTMaxC:
+    %IGTTextChar($1F0, $10, $22)
+IGTTextData_GTMax:
+    %IGTTextChar($1E0, $10, $47)
+IGTTextData_GTMa:
+    %IGTTextChar($1D8, $10, $20)
+IGTTextData_GTM:
+    %IGTTextChar($1D0, $10, $2C)
+IGTTextData_GT:
+    %IGTTextChar($1C0, $10, $43)
+IGTTextData_G:
+    %IGTTextChar($1B8, $10, $26)
 
 print pc, " TC_Verify bank $8C end"
 

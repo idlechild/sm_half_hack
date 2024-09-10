@@ -32,10 +32,11 @@ version_tile_table:
     dw #$39D0, #$39D1, #$39D2, #$39D3, #$39D4, #$39D5
 version_tile_table_letters:
     ; $40 = space
-    dw #$0590
+    dw #$04F0
     ; $41-$5A = A-Z
     dw #$39D0, #$39D1, #$39D2, #$39D3, #$39D4, #$39D5, #$39D6, #$39D7, #$39D8, #$39D9, #$39DA, #$39DB, #$39DC
     dw #$39DD, #$39DE, #$39DF, #$39E0, #$39E1, #$39E2, #$39E3, #$39E4, #$39E5, #$39E6, #$39E7, #$39E8, #$39E9
 
 print pc, " version_display bank $8B end"
+warnpc $8BF900
 

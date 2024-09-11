@@ -1,7 +1,7 @@
 lorom
 
 !VERSION_MAJOR = 0
-!VERSION_MINOR = 3
+!VERSION_MINOR = 4
 
 !SRAM_VERSION = #$3232
 
@@ -39,12 +39,17 @@ lorom
 !sram_ctrl_auto_save_state          = $702006
 !sram_ctrl_toggle_spin_lock         = $702008
 
+!sram_reload_count_in_savestate     = $71387E
+
 !SRAM_DMA_BANK                      = $737000
 !SRAM_SAVED_SP                      = $737F00
 !SRAM_SAVED_STATE                   = $737F02
 !SRAM_MUSIC_DATA                    = $737F80
 !SRAM_MUSIC_TRACK                   = $737F82
 !SRAM_SOUND_TIMER                   = $737F84
+
+!ram_spin_lock_ever_used            = $7ED87C
+!ram_reload_count                   = $7ED87E
 
 !ram_tilemap_buffer                 = $7EF500
 
@@ -197,7 +202,7 @@ init_wram_after_menu:
     PHP
     %a16()
     LDA !ram_spin_lock : BEQ .done_spin_lock
-    LDA $7E09E6 : ORA #$0002 : STA $7E09E6
+    STA !ram_spin_lock_ever_used
 
   .done_spin_lock
     PLP
@@ -338,8 +343,8 @@ gamemode_shortcuts:
     ; check if a saved state exists
     LDA !SRAM_SAVED_STATE : CMP #$5AFE : BNE .load_state_fail
     ; update the load counter in the save state before loading it
-    LDA $7049E6 : CMP #$9C3C : BCS .load_state_jsl
-    INC #4 : STA $7049E6
+    LDA !sram_reload_count_in_savestate : CMP #$270F : BCS .load_state_jsl
+    INC : STA !sram_reload_count_in_savestate
   .load_state_jsl
     JSL load_state
     ; SEC to skip normal gameplay for one frame after loading state
@@ -361,8 +366,8 @@ gamemode_shortcuts:
     TDC
     BRA .set_spin_lock
   .turn_on_spin_lock
-    LDA $09E6 : ORA #$0002 : STA $09E6
     TDC : INC
+    STA !ram_spin_lock_ever_used
   .set_spin_lock
     STA !ram_spin_lock
     ; CLC to continue normal gameplay after turning on or off spin lock
@@ -604,7 +609,7 @@ set_igt_text:
 
   .set_text
     LDA #IGTReloadCountDefinition : STA !ram_IGT_clear_time_text
-    LDA $09E6 : AND #$0002 : BNE .spin_lock
+    LDA !ram_spin_lock_ever_used : BNE .spin_lock
     LDA !ram_spin_lock : BNE .spin_lock
     LDA #IGTCompletedSuccessfullyDefinition : STA !ram_IGT_completed_text
     BRA .set_reload_count
@@ -617,7 +622,7 @@ set_igt_text:
     STA !ram_igt_reload_count_hundreds
     STA !ram_igt_reload_count_thousands    
 
-    LDA $09E6 : LSR : LSR : STA $4204
+    LDA !ram_reload_count : STA $4204
     %a8()
     LDA #$0A : STA $4206   ; divide by 10
     %a16()

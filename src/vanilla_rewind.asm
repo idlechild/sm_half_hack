@@ -1,7 +1,7 @@
 lorom
 
 !VERSION_MAJOR = 0
-!VERSION_MINOR = 2
+!VERSION_MINOR = 3
 
 !SRAM_VERSION = #$3232
 
@@ -65,7 +65,6 @@ lorom
 !ram_cgram_cache                    = $7EFED0
 
 incsrc ../resources/macros.asm
-incsrc ../resources/crash.asm
 incsrc ../resources/IGT_text.asm
 incsrc ../resources/spin_lock.asm
 incsrc ../resources/tinystates.asm
@@ -73,6 +72,7 @@ incsrc ../resources/version_display.asm
 
 !MENU_BLOCK_FULLSCREEN = 1
 incsrc ../resources/menu_base.asm
+
 
 
 ; Patch out copy protection

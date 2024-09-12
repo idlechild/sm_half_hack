@@ -1,7 +1,7 @@
 lorom
 
 !VERSION_MAJOR = 0
-!VERSION_MINOR = 4
+!VERSION_MINOR = 5
 
 !SRAM_VERSION = #$3232
 
@@ -244,6 +244,7 @@ gamemode_start:
 
     ; Overwritten logic
     JSL $8884B9
+    JSL $808111
     PLP
     PLB
     RTL

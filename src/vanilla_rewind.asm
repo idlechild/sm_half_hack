@@ -1,7 +1,7 @@
 lorom
 
-!VERSION_MAJOR = 0
-!VERSION_MINOR = 5
+!VERSION_MAJOR = 1
+!VERSION_MINOR = 0
 
 !SRAM_VERSION = #$3232
 
@@ -300,15 +300,20 @@ gamemode_shortcuts:
     CLC : RTS
 
   .check_shortcuts
-    LDA $8B : CMP !ram_shadow_ctrl_menu : BNE .skip_menu
-    AND $8F : BEQ .skip_menu
-    BRA .menu
-  .skip_menu
-
     LDA $8B : CMP !ram_shadow_ctrl_load_state : BNE .skip_load_state
     AND $8F : BEQ .skip_load_state
     BRA .load_state
   .skip_load_state
+
+    ; Skip other shortcuts if in a door transition
+    LDA $0998 : CMP #$0009 : BMI .check_other_shortcuts
+    CMP #$000C : BMI .skip_toggle_spin_lock
+
+  .check_other_shortcuts
+    LDA $8B : CMP !ram_shadow_ctrl_menu : BNE .skip_menu
+    AND $8F : BEQ .skip_menu
+    BRA .menu
+  .skip_menu
 
     LDA $8B : CMP !ram_shadow_ctrl_auto_save_state : BNE .skip_auto_save_state
     AND $8F : BEQ .skip_auto_save_state
@@ -322,6 +327,22 @@ gamemode_shortcuts:
 
     ; No shortcuts matched, CLC so we won't skip normal gameplay
     CLC : RTS
+
+  .load_state
+    ; check if a saved state exists
+    LDA !SRAM_SAVED_STATE : CMP #$5AFE : BNE .load_state_fail
+    ; update the load counter in the save state before loading it
+    LDA !sram_reload_count_in_savestate : CMP #$270F : BCS .load_state_jsl
+    INC : STA !sram_reload_count_in_savestate
+  .load_state_jsl
+    JSL load_state
+    ; SEC to skip normal gameplay for one frame after loading state
+    SEC : RTS
+
+  .load_state_fail
+    ; CLC to continue normal gameplay
+    LDA !ram_shadow_ctrl_load_state
+    CLC : JMP skip_pause
 
   .menu
     ; Set IRQ vector
@@ -339,22 +360,6 @@ gamemode_shortcuts:
 
     ; SEC to skip normal gameplay for one frame after handling the menu
     SEC : RTS
-
-  .load_state
-    ; check if a saved state exists
-    LDA !SRAM_SAVED_STATE : CMP #$5AFE : BNE .load_state_fail
-    ; update the load counter in the save state before loading it
-    LDA !sram_reload_count_in_savestate : CMP #$270F : BCS .load_state_jsl
-    INC : STA !sram_reload_count_in_savestate
-  .load_state_jsl
-    JSL load_state
-    ; SEC to skip normal gameplay for one frame after loading state
-    SEC : RTS
-
-  .load_state_fail
-    ; CLC to continue normal gameplay
-    LDA !ram_shadow_ctrl_load_state
-    CLC : JMP skip_pause
 
   .auto_save_state
     LDA #$0001 : STA !ram_auto_save_state

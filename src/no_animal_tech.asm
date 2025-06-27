@@ -157,7 +157,13 @@ challenge_failed_shinespark:
     RTS
 warnpc $908EA9
 
-org $90D01B
+org $90D0B1
+    JSR challenge_failed_shinespark
+
+org $90D0DD
+    JSR challenge_failed_shinespark
+
+org $90D10C
     JSR challenge_failed_shinespark
 
 

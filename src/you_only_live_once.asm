@@ -14,6 +14,7 @@ incsrc ../resources/spacetime.asm
 
 ; Enemy population indices
 org $B88000
+EnemyPopulationToBank7E:
     dw $F4A0
 org $B88002
     dw $F4A4
@@ -633,4 +634,70 @@ org $B8EBBB
     dw $F970
 org $B8EBCE
     dw $F974
+
+org $B8F000
+EnemyIndexToBit:
+    dw $0001
+org $B8F040
+    dw $0002
+org $B8F080
+    dw $0004
+org $B8F0C0
+    dw $0008
+org $B8F100
+    dw $0010
+org $B8F140
+    dw $0020
+org $B8F180
+    dw $0040
+org $B8F1C0
+    dw $0080
+org $B8F200
+    dw $0100
+org $B8F240
+    dw $0200
+org $B8F280
+    dw $0400
+org $B8F2C0
+    dw $0800
+org $B8F300
+    dw $1000
+org $B8F340
+    dw $2000
+org $B8F380
+    dw $4000
+org $B8F3C0
+    dw $8000
+org $B8F400
+    dw $0001
+org $B8F440
+    dw $0002
+org $B8F480
+    dw $0004
+org $B8F4C0
+    dw $0008
+org $B8F500
+    dw $0010
+org $B8F540
+    dw $0020
+org $B8F580
+    dw $0040
+org $B8F5C0
+    dw $0080
+org $B8F600
+    dw $0100
+org $B8F640
+    dw $0200
+org $B8F680
+    dw $0400
+org $B8F6C0
+    dw $0800
+org $B8F700
+    dw $1000
+org $B8F740
+    dw $2000
+org $B8F780
+    dw $4000
+org $B8F7C0
+    dw $8000
 

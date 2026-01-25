@@ -4,6 +4,7 @@ lorom
 !VERSION_MINOR = 1
 
 incsrc ../resources/macros.asm
+incsrc ../resources/crash.asm
 incsrc ../resources/reduce_flashing.asm
 incsrc ../resources/version_display.asm
 
@@ -11,10 +12,378 @@ incsrc ../resources/version_display.asm
 !SPACETIME_PRESERVE_SPRITE_OBJECT_RAM = 1
 incsrc ../resources/spacetime.asm
 
+!ALWAYS_DRAW_KILL_COUNTER = 1
+
+; Stores the RAM address of the enemy kill flags
+!ram_enemy_kill_flags_front_address = $C1
+!ram_enemy_kill_flags_front_bank = $C3
+!ram_enemy_kill_flags_back_address = $C4
+!ram_enemy_kill_flags_back_bank = $C6
+
+; Temporary variables
+!ram_init_enemies_kill_flags = $C7
+!ram_init_enemies_kill_bitmask = $C9
+
+; This RAM address is also maintained in SRAM when the game is saved
+; It is initialized to 1 and otherwise unused by NTSC
+; (also in PAL it only makes a difference if it is 0)
+; Thus we can use this to track enemy kills even if you reset and reload from a save
+!ram_kill_counter = $09E6
+
+if !ALWAYS_DRAW_KILL_COUNTER
+!ram_draw_thousands = $1886
+!ram_draw_hundreds = $1888
+!ram_draw_tens = $188A
+!ram_draw_ones = $188C
+endif
+
+
+org $808000
+hook_copy_protection:
+    db $FF
+
+org $808262
+    LDA #$0004
+
+if !ALWAYS_DRAW_KILL_COUNTER
+org $80A0A3
+    JSL load_kill_counter
+endif
+
+org $80FFD8
+hook_sram_size:
+    db $04 ; 16kb
+
+
+org $818010
+    JMP save_kills
+
+org $818094
+    JMP load_kills
+
+org $81B3B3
+    TDC : TAX
+new_save_loop:
+    STA $7ECD52,X
+    STA $7EF4A0,X
+    INX : INX
+    CPX #$0700 : BMI new_save_loop
+
+org $81F000
+print pc, " you_only_live_once bank $81 start"
+
+save_kills:
+{
+    ASL : STA $12
+    ASL : ASL : XBA : TAX
+    LDY #$F4A0
+  .loop
+    LDA $0000,Y : STA $702000,X
+    INX : INX : INY : INY
+    CPY #$F978 : BMI .loop
+    JMP $8013
+}
+
+load_kills:
+{
+    ASL : STA $12
+    ASL : ASL : XBA : TAX
+    LDY #$F4A0
+  .loop
+    LDA $702000,X : STA $0000,Y
+    INX : INX : INY : INY
+    CPY #$F978 : BMI .loop
+    LDX $12
+    JMP $8098
+}
+
+if !ALWAYS_DRAW_KILL_COUNTER
+load_kill_counter:
+{
+    TDC : STA !ram_draw_ones : STA !ram_draw_tens
+    STA !ram_draw_hundreds : STA !ram_draw_thousands
+    LDA !ram_kill_counter
+    DEC : BEQ .done
+    STA $4204
+    %a8()
+    LDA #$0A : STA $4206
+    %a16()
+    PEA $0000 : PLA ; wait for CPU math
+    LDA $4214 : PHA ; tens
+    LDA $4216 : ASL : STA !ram_draw_ones
+    PLA : BEQ .done
+    STA $4204
+    %a8()
+    LDA #$0A : STA $4206
+    %a16()
+    PEA $0000 : PLA ; wait for CPU math
+    LDA $4214 : PHA ; hundreds
+    LDA $4216 : ASL : STA !ram_draw_tens
+    PLA : BEQ .done
+    STA $4204
+    %a8()
+    LDA #$0A : STA $4206
+    %a16()
+    PEA $0000 : PLA ; wait for CPU math
+    LDA $4214 : ASL : STA !ram_draw_thousands
+    LDA $4216 : ASL : STA !ram_draw_hundreds
+  .done
+    JML $82E76B
+}
+endif
+
+print pc, " you_only_live_once bank $81 end"
+
+
+org $82EEDF
+    LDA #$C100
+
+
+org $86EF23
+    NOP : NOP : NOP
+
+
+org $8C9607
+zebes_planet_tile_data:
+    dw #$0E2F
+
+
+if !ALWAYS_DRAW_KILL_COUNTER
+org $90E6C0
+	 JSR ih_draw_counter
+endif
+
+
+org $90FC00
+print pc, " you_only_live_once bank $90 start"
+
+OffsetHexToNumber:
+    dw #$0C09, #$0C00, #$0C01, #$0C02, #$0C03, #$0C04, #$0C05, #$0C06, #$0C07, #$0C08
+
+if !ALWAYS_DRAW_KILL_COUNTER
+ih_draw_counter:
+{
+    LDX !ram_draw_ones
+    LDA OffsetHexToNumber,X : STA $7EC6B8
+    LDX !ram_draw_tens
+    LDA OffsetHexToNumber,X : STA $7EC6B6
+    LDX !ram_draw_hundreds
+    LDA OffsetHexToNumber,X : STA $7EC6B4
+    LDX !ram_draw_thousands
+    LDA OffsetHexToNumber,X : STA $7EC6B2
+
+  .end
+    JMP $DCDD
+}
+endif
+
+print pc, " you_only_live_once bank $90 end"
+
+
+org $A08AE1
+    JMP init_enemies
+
+org $A08BCC
+    JMP init_enemies_next
+
+org $A08EED
+    JMP delete_enemy
+
+org $A08F8C
+    JMP delete_enemy_offscreen
+
+org $A0923D
+    JMP delete_rinka
+
+org $A0A3EE
+    JMP enemy_death
+
+org $A0A43F
+    JMP rinka_death
+
+org $A0F800
+print pc, " you_only_live_once bank $A0 start"
+
+init_enemies:
+{
+    LDA #$7E7E
+    STA !ram_enemy_kill_flags_front_bank
+    STA !ram_enemy_kill_flags_back_bank
+    LDA.l $B80000,X
+    STA !ram_enemy_kill_flags_front_address
+    INC : INC : STA !ram_enemy_kill_flags_back_address
+    LDA.l $A10000,X : CMP #$FFFF : BNE .start
+    JMP $8BE6
+  .start
+    LDA [!ram_enemy_kill_flags_front_address] : STA !ram_init_enemies_kill_flags
+    STZ $0E48 : TDC : TAY : INC : STA !ram_init_enemies_kill_bitmask
+  .loop
+    LDA !ram_init_enemies_kill_flags : BIT !ram_init_enemies_kill_bitmask : BNE .dead
+    JMP $8AF3
+  .dead
+    TYA : CLC : ADC #$0040 : TAY
+    TXA : CLC : ADC #$0010 : TAX
+    LDA.l $A10000,X : CMP #$FFFF : BEQ .done
+  .next
+    CPY #$0400 : BNE .increment_flag
+    LDA [!ram_enemy_kill_flags_back_address] : STA !ram_init_enemies_kill_flags
+    LDA #$0001 : STA !ram_init_enemies_kill_bitmask
+    BRA .loop
+  .increment_flag
+    LDA !ram_init_enemies_kill_bitmask : ASL : STA !ram_init_enemies_kill_bitmask
+    BRA .loop
+  .done
+    JMP $8BCF
+}
+
+delete_enemy:
+{
+    STZ $0F78,X
+    INC !ram_kill_counter
+if !ALWAYS_DRAW_KILL_COUNTER
+    JSR update_draw_values
+endif
+    LDA.l EnemyIndexToBit,X : STA !ram_init_enemies_kill_bitmask
+    CPX #$0400 : BPL .back_half
+    LDA [!ram_enemy_kill_flags_front_address]
+    ORA !ram_init_enemies_kill_bitmask
+    STA [!ram_enemy_kill_flags_front_address]
+    JMP $8F54
+  .back_half
+    LDA [!ram_enemy_kill_flags_back_address]
+    ORA !ram_init_enemies_kill_bitmask
+    STA [!ram_enemy_kill_flags_back_address]
+    JMP $8F54
+}
+
+delete_enemy_offscreen:
+{
+    STZ $0F78,X
+    INC !ram_kill_counter
+if !ALWAYS_DRAW_KILL_COUNTER
+    JSR update_draw_values
+endif
+    LDA.l EnemyIndexToBit,X : STA !ram_init_enemies_kill_bitmask
+    CPX #$0400 : BPL .back_half
+    LDA [!ram_enemy_kill_flags_front_address]
+    ORA !ram_init_enemies_kill_bitmask
+    STA [!ram_enemy_kill_flags_front_address]
+    JMP $8FB4
+  .back_half
+    LDA [!ram_enemy_kill_flags_back_address]
+    ORA !ram_init_enemies_kill_bitmask
+    STA [!ram_enemy_kill_flags_back_address]
+    JMP $8FB4
+}
+
+delete_rinka:
+{
+    STZ $0F78,X
+    INC !ram_kill_counter
+if !ALWAYS_DRAW_KILL_COUNTER
+    JSR update_draw_values
+endif
+    LDA.l EnemyIndexToBit,X : STA !ram_init_enemies_kill_bitmask
+    CPX #$0400 : BPL .back_half
+    LDA [!ram_enemy_kill_flags_front_address]
+    ORA !ram_init_enemies_kill_bitmask
+    STA [!ram_enemy_kill_flags_front_address]
+    JMP $9240
+  .back_half
+    LDA [!ram_enemy_kill_flags_back_address]
+    ORA !ram_init_enemies_kill_bitmask
+    STA [!ram_enemy_kill_flags_back_address]
+    JMP $9240
+}
+
+enemy_death:
+{
+    INC !ram_kill_counter
+if !ALWAYS_DRAW_KILL_COUNTER
+    JSR update_draw_values
+endif
+    LDA.l EnemyIndexToBit,X : STA !ram_init_enemies_kill_bitmask
+    CPX #$0400 : BPL .back_half
+    LDA [!ram_enemy_kill_flags_front_address]
+    ORA !ram_init_enemies_kill_bitmask
+    STA [!ram_enemy_kill_flags_front_address]
+  .front_loop
+    STZ $0F78,X
+    INX : INX
+    DEY : DEY : BPL .front_loop
+    INC $0E50
+    PLB : PLP : RTL
+  .back_half
+    LDA [!ram_enemy_kill_flags_back_address]
+    ORA !ram_init_enemies_kill_bitmask
+    STA [!ram_enemy_kill_flags_back_address]
+  .back_loop
+    STZ $0F78,X
+    INX : INX
+    DEY : DEY : BPL .back_loop
+    INC $0E50
+    PLB : PLP : RTL
+}
+
+rinka_death:
+{
+    INC !ram_kill_counter
+if !ALWAYS_DRAW_KILL_COUNTER
+    JSR update_draw_values
+endif
+    LDA.l EnemyIndexToBit,X : STA !ram_init_enemies_kill_bitmask
+    CPX #$0400 : BPL .back_half
+    LDA [!ram_enemy_kill_flags_front_address]
+    ORA !ram_init_enemies_kill_bitmask
+    STA [!ram_enemy_kill_flags_front_address]
+  .front_loop
+    STZ $0F78,X
+    INX : INX
+    DEY : DEY : BPL .front_loop
+    PLB : PLP : RTL
+  .back_half
+    LDA [!ram_enemy_kill_flags_back_address]
+    ORA !ram_init_enemies_kill_bitmask
+    STA [!ram_enemy_kill_flags_back_address]
+  .back_loop
+    STZ $0F78,X
+    INX : INX
+    DEY : DEY : BPL .back_loop
+    PLB : PLP : RTL
+}
+
+if !ALWAYS_DRAW_KILL_COUNTER
+update_draw_values:
+{
+    LDA !ram_draw_ones : CMP #$0012 : BEQ .inc_tens
+    INC : INC : STA !ram_draw_ones
+    BRA .done_inc
+  .inc_tens
+    LDA !ram_draw_tens : CMP #$0012 : BEQ .inc_hundreds
+    INC : INC : STA !ram_draw_tens
+    TDC : STA !ram_draw_ones
+    BRA .done_inc
+  .inc_hundreds
+    LDA !ram_draw_hundreds : CMP #$0012 : BEQ .inc_thousands
+    INC : INC : STA !ram_draw_hundreds
+    TDC : STA !ram_draw_tens : STA !ram_draw_ones
+    BRA .done_inc
+  .inc_thousands
+    LDA !ram_draw_thousands : CMP #$0012 : BEQ .done_inc
+    INC : INC : STA !ram_draw_thousands
+    TDC : STA !ram_draw_hundreds : STA !ram_draw_tens : STA !ram_draw_ones
+  .done_inc
+    RTS
+}
+endif
+
+print pc, " you_only_live_once bank $A0 end"
+
 
 ; Enemy population indices
 org $B88000
-EnemyPopulationToBank7E:
+print pc, " you_only_live_once bank $B8 start"
+
     dw $F4A0
 org $B88002
     dw $F4A4
@@ -700,4 +1069,6 @@ org $B8F780
     dw $4000
 org $B8F7C0
     dw $8000
+
+print pc, " you_only_live_once bank $B8 end"
 

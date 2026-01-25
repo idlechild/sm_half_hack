@@ -22,12 +22,16 @@ cd resources
 python create_dummies.py 00.sfc ff.sfc
 
 copy *.sfc ..\build
-..\tools\asar.exe --no-title-check --symbols=wla --symbols-path=..\build\%1.sym ..\src\%1.asm ..\build\00.sfc
-if ERRORLEVEL 1 goto end_build
+..\tools\asar.exe --no-title-check --symbols=wla --symbols-path=..\build\%1.sym ..\src\%1.asm ..\build\00.sfc > ..\build\print_pc.log 2>&1
+if ERRORLEVEL 1 goto fail_build
 ..\tools\asar.exe --no-title-check --symbols=wla --symbols-path=..\build\%1.sym ..\src\%1.asm ..\build\ff.sfc
 python create_ips.py ..\build\00.sfc ..\build\ff.sfc ..\build\%1.ips
 python dos_to_unix.py ..\build\%1.sym
 python sort_debug_symbols.py ..\build\%1.sym ..\build\%1_Sorted.sym ..\build\%1_Combined.sym
+goto end_build
+
+:fail_build
+type ..\build\print_pc.log
 :end_build
 
 del 00.sfc ff.sfc ..\build\00.sfc ..\build\ff.sfc

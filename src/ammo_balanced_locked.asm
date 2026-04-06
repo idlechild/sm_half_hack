@@ -1,7 +1,7 @@
 lorom
 
 ; Replace unused instructions in Bank 84
-org $84832D
+org $848A40
 IncrementSupersPBs:
 {
     LDA $09C8 : BNE .incSupers
@@ -17,7 +17,9 @@ IncrementSupersPBs:
   .jump
     JMP $89A9
 }
+warnpc $848A64
 
+org $848C22
 IncrementMissilesPBs:
 {
     LDA $09CC : BNE .incMissiles
@@ -33,9 +35,9 @@ IncrementMissilesPBs:
   .jump
     JMP $89D2
 }
-warnpc $84837E
+warnpc $848C46
 
-org $848A40
+org $848C4F
 IncrementMissilesSupers:
 {
     LDA $09D0 : BNE .incMissiles
@@ -51,7 +53,7 @@ IncrementMissilesSupers:
   .jump
     JMP $89FB
 }
-warnpc $848A72
+warnpc $848C73
 
 ; Red door facing left hit count
 org $84C32C

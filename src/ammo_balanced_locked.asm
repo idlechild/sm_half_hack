@@ -1,5 +1,9 @@
 lorom
 
+; Overwrite map rando checksum verification (has no effect on vanilla)
+org $808340
+    STA $05B4
+
 ; Replace unused instructions in Bank 84
 org $848A40
 IncrementSupersPBs:
